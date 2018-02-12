@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+      "allowJs": false,
+      "target": "es5",
+      "outFile": "html/js/tsc.js"
+    },
+    "include": [
+        "ts/**/*"
+    ]
+}
