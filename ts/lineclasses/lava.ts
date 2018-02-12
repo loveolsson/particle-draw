@@ -31,13 +31,12 @@ class Lava extends LineType {
     let offset = Math.random() * Math.PI * 2;
     let opacityOffset = Math.random();
 
-    let mesh = new THREE.Mesh( geometry, material );
-    mesh.position.set(posx, posy, 0);
+    let mesh = new THREE.Mesh( geometry, [material] );
     mesh.rotation.z = Math.random() * Math.PI * 2;
 
     scene.add( mesh );
 
-    var part = new Particle(mesh, offset, opacityOffset, this.animateLava);
+    var part = new Particle(mesh, posx, posy, 0, offset, opacityOffset, this.animateLava);
 
     return part;
   }
@@ -49,15 +48,16 @@ class Lava extends LineType {
     let offset = Math.random() * Math.PI * 2;
     let opacityOffset = Math.random();
 
-    let mesh = new THREE.Mesh( geometry, material );
+    let mesh = new THREE.Mesh( geometry, [material] );
+
+
     mesh.rotation.z = Math.random() * Math.PI * 2;
-    mesh.position.set(posx, posy, -0.1);
 
     mesh.scale.set(0,0,0);
 
     scene.add( mesh );
 
-    var part = new Particle(mesh, offset, opacityOffset, this.animateStone);
+    var part = new Particle(mesh, posx, posy, -0.1, offset, opacityOffset, this.animateStone);
 
     return part;
   }
@@ -66,9 +66,10 @@ class Lava extends LineType {
     part.offset += timediff/5000;
     part.offset %= Math.PI * 2;
 
-    part.mesh.position.x += Math.sin(part.offset)*0.01;
-    part.mesh.position.y += Math.cos(part.offset)*0.01;
-    part.mesh.material.opacity = (Math.sin(part.offset*3) *0.7 + 0.3)*clearrunner;
+    let x = part.x + Math.sin(part.offset) * 4;
+    let y = part.y + Math.cos(part.offset) * 4;
+    part.mesh.position.set(x, y, part.z);
+    part.mesh.material[0].opacity = (Math.sin(part.offset*3) *0.7 + 0.3)*clearrunner;
     part.mesh.rotation.z += timediff/5000;
     part.mesh.rotation.z %= Math.PI * 2;
     part.mesh.scale.set(2-clearrunner*part.birth,2-clearrunner*part.birth,1);
@@ -77,8 +78,9 @@ class Lava extends LineType {
   }
 
   animateStone (part: Particle, timediff: number, clearrunner: number) {
+    part.mesh.position.set(part.x, part.y, part.z);
     part.mesh.scale.set(part.birth*clearrunner,part.birth*clearrunner,1);
-    part.mesh.material.opacity = clearrunner;
+    part.mesh.material[0].opacity = clearrunner;
 
     if (part.birth < 1) part.birth += timediff / 1000;
 

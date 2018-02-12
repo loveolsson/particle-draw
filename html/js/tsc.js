@@ -54,7 +54,7 @@ function render() {
     if (clearrunner <= 0) {
         clear = false;
         for (var x in particles) {
-            scene.remove(particles[x].object);
+            scene.remove(particles[x].mesh);
             delete particles[x];
         }
         clearrunner = 1;
@@ -129,8 +129,11 @@ $(document).bind('mousemove touchmove', function (e) {
     lasty = event.pageY;
 });
 var Particle = /** @class */ (function () {
-    function Particle(mesh, offset, opacityOffset, animate) {
+    function Particle(mesh, x, y, z, offset, opacityOffset, animate) {
         this.mesh = mesh;
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.offset = offset;
         this.opacityOffset = opacityOffset;
         this.animate = animate;
@@ -216,11 +219,10 @@ var Lava = /** @class */ (function (_super) {
         var material = this.lavamaterial.clone();
         var offset = Math.random() * Math.PI * 2;
         var opacityOffset = Math.random();
-        var mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(posx, posy, 0);
+        var mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
         scene.add(mesh);
-        var part = new Particle(mesh, offset, opacityOffset, this.animateLava);
+        var part = new Particle(mesh, posx, posy, 0, offset, opacityOffset, this.animateLava);
         return part;
     };
     Lava.prototype.newStone = function (scene, posx, posy) {
@@ -228,20 +230,20 @@ var Lava = /** @class */ (function (_super) {
         var material = this.stonematerial.clone();
         var offset = Math.random() * Math.PI * 2;
         var opacityOffset = Math.random();
-        var mesh = new THREE.Mesh(geometry, material);
+        var mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
-        mesh.position.set(posx, posy, -0.1);
         mesh.scale.set(0, 0, 0);
         scene.add(mesh);
-        var part = new Particle(mesh, offset, opacityOffset, this.animateStone);
+        var part = new Particle(mesh, posx, posy, -0.1, offset, opacityOffset, this.animateStone);
         return part;
     };
     Lava.prototype.animateLava = function (part, timediff, clearrunner) {
         part.offset += timediff / 5000;
         part.offset %= Math.PI * 2;
-        part.mesh.position.x += Math.sin(part.offset) * 0.01;
-        part.mesh.position.y += Math.cos(part.offset) * 0.01;
-        part.mesh.material.opacity = (Math.sin(part.offset * 3) * 0.7 + 0.3) * clearrunner;
+        var x = part.x + Math.sin(part.offset) * 4;
+        var y = part.y + Math.cos(part.offset) * 4;
+        part.mesh.position.set(x, y, part.z);
+        part.mesh.material[0].opacity = (Math.sin(part.offset * 3) * 0.7 + 0.3) * clearrunner;
         part.mesh.rotation.z += timediff / 5000;
         part.mesh.rotation.z %= Math.PI * 2;
         part.mesh.scale.set(2 - clearrunner * part.birth, 2 - clearrunner * part.birth, 1);
@@ -249,8 +251,9 @@ var Lava = /** @class */ (function (_super) {
             part.birth += timediff / 1000;
     };
     Lava.prototype.animateStone = function (part, timediff, clearrunner) {
+        part.mesh.position.set(part.x, part.y, part.z);
         part.mesh.scale.set(part.birth * clearrunner, part.birth * clearrunner, 1);
-        part.mesh.material.opacity = clearrunner;
+        part.mesh.material[0].opacity = clearrunner;
         if (part.birth < 1)
             part.birth += timediff / 1000;
     };

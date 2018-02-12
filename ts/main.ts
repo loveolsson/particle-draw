@@ -8,7 +8,6 @@ camera.position.x = 640;
 camera.position.y = 360;
 
 var renderer = new THREE.WebGLRenderer({ alpha: true });
-
 renderer.setSize(SW, SH);
 
 var particles = [];
@@ -43,7 +42,7 @@ $( function() {
 
 });
 
-function createPoint(posx, posy, direction) {
+function createPoint (posx: number, posy: number, direction: number) {
   lineTypes[0].newPoint (scene, particles, posx, posy, direction);
 }
 
@@ -68,7 +67,7 @@ function render() {
   if (clearrunner <= 0) {
     clear = false;
     for (var x in particles) {
-      scene.remove( particles[x].object );
+      scene.remove(particles[x].mesh);
       delete particles[x];
     }
     clearrunner = 1;
