@@ -1,20 +1,8 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var lineTypes = [];
-var SW = 1280, SH = 720;
+const SW = 1920, SH = 1080;
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(45, SW / SH, 0.1, 1000);
-camera.position.z = 870;
-camera.position.x = 640;
-camera.position.y = 360;
+var camera = new THREE.OrthographicCamera(SW / -2, SW / 2, SH / 2, SH / -2, 0, 2000);
+camera.position.set(SW / 2, SH / 2, 100);
 var renderer = new THREE.WebGLRenderer({ alpha: true });
 renderer.setSize(SW, SH);
 var particles = [];
@@ -29,11 +17,10 @@ var video;
 $(function () {
     lineTypes.push(new LineLava());
     video = document.querySelector('video');
-    console.log(video);
     gumInit();
     render();
-    document.body.appendChild(renderer.domElement);
-    $(renderer.domElement).css({ position: 'absolute' });
+    var e = $(renderer.domElement).css({ position: 'absolute' });
+    $('body').append(e);
 });
 function createPoint(posx, posy, direction) {
     lineTypes[0].newPoint(particles, posx, posy, direction);
@@ -48,7 +35,7 @@ function render() {
     totaltime += timediff;
     renderer.render(scene, camera);
     requestAnimationFrame(render);
-    particles.forEach(function (p) { return p.animate(timediff, clearrunner, totaltime); });
+    particles.forEach(p => p.animate(timediff, clearrunner, totaltime));
     if (clear)
         clearrunner -= timediff / 500;
     if (clearrunner <= 0) {
@@ -62,13 +49,7 @@ function render() {
 }
 function gumSuccess(stream) {
     console.log("gumSuccess");
-    // window.stream = stream;
-    if (window.URL) {
-        video.src = window.URL.createObjectURL(stream);
-    }
-    else {
-        video.src = stream;
-    }
+    video.src = window.URL.createObjectURL(stream);
     video.play();
 }
 function gumError(error) {
@@ -94,21 +75,26 @@ $(document).bind('mousedown touchstart', function (event) {
 });
 $(document).bind('mouseup touchend', function (event) {
     mousedown = false;
-    lastx = lasty = false;
+    lastx = lasty = -1;
     //console.log('Click end');
 });
 $(document).bind('mousemove touchmove', function (e) {
-    var event = e;
-    if (e.type == "touchmove")
-        event = e.originalEvent.touches[0];
-    //console.log('Move');
-    //console.log(event);
+    let pageX;
+    let pageY;
+    if (e.type == "touchmove") {
+        pageX = e.touches[0].pageX;
+        pageY = e.touches[0].pageY;
+    }
+    else if (e.type == "mousemove") {
+        pageX = e.pageX;
+        pageY = e.pageY;
+    }
     if (!mousedown || drawing)
         return;
-    if (_.isInteger(lastx)) {
+    if (lastx >= 0) {
         drawing = true;
-        var distx = event.pageX - lastx;
-        var disty = event.pageY - lasty;
+        var distx = pageX - lastx;
+        var disty = pageY - lasty;
         var distance = Math.sqrt(distx * distx + disty * disty) / 2;
         var x = lastx;
         var y = lasty;
@@ -120,16 +106,16 @@ $(document).bind('mousemove touchmove', function (e) {
             //Calculate direction i radians
             var deltaX = x - oldx;
             var deltaY = oldy - y;
-            var direction = Math.atan2(deltaY, deltaX);
-            createPoint(x, 720 - y, direction);
+            let direction = Math.atan2(deltaY, deltaX);
+            createPoint(x, SH - y, direction);
         }
         drawing = false;
     }
-    lastx = event.pageX;
-    lasty = event.pageY;
+    lastx = pageX;
+    lasty = pageY;
 });
-var Particle = /** @class */ (function () {
-    function Particle(mesh, x, y, z, offset, opacityOffset) {
+class Particle {
+    constructor(mesh, x, y, z, offset, opacityOffset) {
         this.mesh = mesh;
         this.x = x;
         this.y = y;
@@ -138,17 +124,15 @@ var Particle = /** @class */ (function () {
         this.opacityOffset = opacityOffset;
         this.birth = 0;
     }
-    Particle.prototype.animate = function (timediff, clearrunner, totaltime) {
-    };
-    return Particle;
-}());
-var LineType = /** @class */ (function () {
-    function LineType() {
+    animate(timediff, clearrunner, totaltime) {
     }
-    LineType.prototype.newPoint = function (particles, posx, posy, direction) {
-    };
-    return LineType;
-}());
+}
+class LineType {
+    constructor() {
+    }
+    newPoint(particles, posx, posy, direction) {
+    }
+}
 // function lineArrow () {
 //   this.every = 0;
 //   this.arrowtexture = THREE.ImageUtils.loadTexture( "img/arrow.png" );
@@ -197,45 +181,39 @@ var LineType = /** @class */ (function () {
 //   }
 //
 // }
-var LineLava = /** @class */ (function (_super) {
-    __extends(LineLava, _super);
-    function LineLava() {
-        var _this = _super.call(this) || this;
-        var glowball = THREE.ImageUtils.loadTexture("img/glowball2.png");
-        _this.lavamaterial = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.AdditiveBlending });
-        var stone = THREE.ImageUtils.loadTexture("img/stone.png");
-        _this.stonematerial = new THREE.MeshBasicMaterial({ map: stone, transparent: true, blending: THREE.NormalBlending });
-        _this.every = 0;
-        return _this;
+class LineLava extends LineType {
+    constructor() {
+        super();
+        let glowball = THREE.ImageUtils.loadTexture("img/glowball2.png");
+        this.lavamaterial = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.AdditiveBlending });
+        let stone = THREE.ImageUtils.loadTexture("img/stone.png");
+        this.stonematerial = new THREE.MeshBasicMaterial({ map: stone, transparent: true, blending: THREE.NormalBlending });
+        this.every = 0;
     }
-    LineLava.prototype.newPoint = function (particles, posx, posy, direction) {
+    newPoint(particles, posx, posy, direction) {
         this.every++;
         this.every %= 6;
         particles.push(new ParticleLava(this.lavamaterial, posx, posy));
         if (this.every == 0)
             particles.push(new ParticleStone(this.stonematerial, posx, posy));
-    };
-    return LineLava;
-}(LineType));
-var ParticleLava = /** @class */ (function (_super) {
-    __extends(ParticleLava, _super);
-    function ParticleLava(_material, posx, posy) {
-        var _this = this;
+    }
+}
+class ParticleLava extends Particle {
+    constructor(_material, posx, posy) {
         var geometry = new THREE.PlaneGeometry(15, 15);
-        var material = _material.clone();
-        var offset = Math.random() * Math.PI * 2;
-        var opacityOffset = Math.random();
-        var mesh = new THREE.Mesh(geometry, [material]);
+        let material = _material.clone();
+        let offset = Math.random() * Math.PI * 2;
+        let opacityOffset = Math.random();
+        let mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
         scene.add(mesh);
-        _this = _super.call(this, mesh, posx, posy, 0, offset, opacityOffset) || this;
-        return _this;
+        super(mesh, posx, posy, 0, offset, opacityOffset);
     }
-    ParticleLava.prototype.animate = function (timediff, clearrunner, totaltime) {
+    animate(timediff, clearrunner, totaltime) {
         this.offset += timediff / 5000;
         this.offset %= Math.PI * 2;
-        var x = this.x + Math.sin(this.offset) * 4;
-        var y = this.y + Math.cos(this.offset) * 4;
+        let x = this.x + Math.sin(this.offset) * 4;
+        let y = this.y + Math.cos(this.offset) * 4;
         this.mesh.position.set(x, y, this.z);
         this.mesh.material[0].opacity = (Math.sin(this.offset * 3) * 0.7 + 0.3) * clearrunner;
         this.mesh.rotation.z += timediff / 5000;
@@ -243,33 +221,28 @@ var ParticleLava = /** @class */ (function (_super) {
         this.mesh.scale.set(2 - clearrunner * this.birth, 2 - clearrunner * this.birth, 1);
         if (this.birth < 1)
             this.birth += timediff / 1000;
-    };
-    return ParticleLava;
-}(Particle));
-var ParticleStone = /** @class */ (function (_super) {
-    __extends(ParticleStone, _super);
-    function ParticleStone(_material, posx, posy) {
-        var _this = this;
-        var geometry = new THREE.PlaneGeometry(20, 20);
-        var material = _material.clone();
-        var offset = Math.random() * Math.PI * 2;
-        var opacityOffset = Math.random();
-        var mesh = new THREE.Mesh(geometry, [material]);
+    }
+}
+class ParticleStone extends Particle {
+    constructor(_material, posx, posy) {
+        let geometry = new THREE.PlaneGeometry(20, 20);
+        let material = _material.clone();
+        let offset = Math.random() * Math.PI * 2;
+        let opacityOffset = Math.random();
+        let mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
         mesh.scale.set(0, 0, 0);
         scene.add(mesh);
-        _this = _super.call(this, mesh, posx, posy, -0.1, offset, opacityOffset) || this;
-        return _this;
+        super(mesh, posx, posy, -0.1, offset, opacityOffset);
     }
-    ParticleStone.prototype.animate = function (timediff, clearrunner, totaltime) {
+    animate(timediff, clearrunner, totaltime) {
         this.mesh.position.set(this.x, this.y, this.z);
         this.mesh.scale.set(this.birth * clearrunner, this.birth * clearrunner, 1);
         this.mesh.material[0].opacity = clearrunner;
         if (this.birth < 1)
             this.birth += timediff / 1000;
-    };
-    return ParticleStone;
-}(Particle));
+    }
+}
 // function lineMagic () {
 //   this.every = 0;
 //   this.total = 0;

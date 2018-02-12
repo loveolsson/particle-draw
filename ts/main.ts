@@ -1,49 +1,41 @@
 var lineTypes: LineType[] = [];
 
-var SW = 1280, SH = 720;
+const SW = 1920, SH = 1080;
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(45, SW / SH, 0.1, 1000);
-camera.position.z = 870;
-camera.position.x = 640;
-camera.position.y = 360;
+var camera = new THREE.OrthographicCamera(SW/-2, SW/2, SH/2, SH/-2, 0, 2000);
+camera.position.set(SW/2, SH/2, 100);
 
 var renderer = new THREE.WebGLRenderer({ alpha: true });
 renderer.setSize(SW, SH);
 
-var particles = [];
+var particles:Particle[] = [];
 
-var clearrunner = 1;
-var clear = false;
-var totaltime = 0;
+var clearrunner:number = 1;
+var clear:boolean = false;
+var totaltime:number = 0;
 
-var time = 0; //Time of last frame
+var time:number = 0; //Time of last frame
 
-var mousedown = false; //Draw things if mouse is down
+var mousedown:boolean = false; //Draw things if mouse is down
+var lastx:number, lasty: number; //
 
-var lastx, lasty; //
-
-
-var drawing = false; // Is true during drawing loop
-var video;
-
-
+var drawing:boolean = false; // Is true during drawing loop
+var video: HTMLVideoElement;
 
 $( function() {
   lineTypes.push(new LineLava());
 
-
   video = document.querySelector('video');
-  console.log(video);
   gumInit();
   render();
-  document.body.appendChild(renderer.domElement);
-  $(renderer.domElement).css({position: 'absolute'});
 
+  var e = $(renderer.domElement).css({position: 'absolute'});
+  $('body').append(e);
 
 });
 
 function createPoint (posx: number, posy: number, direction: number) {
-  lineTypes[0].newPoint (particles, posx, posy, direction);
+  lineTypes[0].newPoint(particles, posx, posy, direction);
 }
 
 function render() {
@@ -77,18 +69,13 @@ function render() {
 }
 
 
-function gumSuccess(stream) {
+function gumSuccess(stream: MediaStream) {
   console.log("gumSuccess");
-  // window.stream = stream;
-  if (window.URL) {
-    video.src = window.URL.createObjectURL(stream);
-  } else {
-    video.src = stream;
-  }
+  video.src = window.URL.createObjectURL(stream);
   video.play();
 }
 
-function gumError(error) {
+function gumError(error: MediaStreamError) {
   console.error('Error on getUserMedia', error);
 }
 
@@ -116,26 +103,30 @@ $(document).bind('mousedown touchstart', function(event) {
 
 $(document).bind('mouseup touchend', function(event) {
   mousedown = false;
-  lastx = lasty = false;
+  lastx = lasty = -1;
       //console.log('Click end');
 
 });
 
 $(document).bind('mousemove touchmove', function(e) {
 
-  var event = e;
-  if (e.type == "touchmove") event = e.originalEvent.touches[0];
+  let pageX: number;
+  let pageY: number;
 
-
-      //console.log('Move');
-      //console.log(event);
+  if (e.type == "touchmove") {
+    pageX = e.touches[0].pageX;
+    pageY = e.touches[0].pageY;
+  } else if (e.type == "mousemove") {
+    pageX = e.pageX;
+    pageY = e.pageY;
+  }
 
   if (!mousedown || drawing) return;
 
-  if (_.isInteger(lastx)) {
+  if (lastx >= 0) {
     drawing = true;
-    var distx = event.pageX - lastx;
-    var disty = event.pageY - lasty;
+    var distx = pageX - lastx;
+    var disty = pageY - lasty;
 
     var distance = Math.sqrt(distx*distx + disty*disty)/2;
 
@@ -156,13 +147,11 @@ $(document).bind('mousemove touchmove', function(e) {
 
       let direction = Math.atan2(deltaY, deltaX);
 
-      createPoint(x, 720-y, direction);
-
-
+      createPoint(x, SH-y, direction);
     }
     drawing = false;
-
   }
-  lastx = event.pageX;
-  lasty = event.pageY;
+
+  lastx = pageX;
+  lasty = pageY;
 });
