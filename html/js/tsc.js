@@ -27,7 +27,7 @@ var lastx, lasty; //
 var drawing = false; // Is true during drawing loop
 var video;
 $(function () {
-    lineTypes.push(new Lava());
+    lineTypes.push(new LineLava());
     video = document.querySelector('video');
     console.log(video);
     gumInit();
@@ -36,7 +36,7 @@ $(function () {
     $(renderer.domElement).css({ position: 'absolute' });
 });
 function createPoint(posx, posy, direction) {
-    lineTypes[0].newPoint(scene, particles, posx, posy, direction);
+    lineTypes[0].newPoint(particles, posx, posy, direction);
 }
 function render() {
     var d = new Date();
@@ -48,7 +48,7 @@ function render() {
     totaltime += timediff;
     renderer.render(scene, camera);
     requestAnimationFrame(render);
-    particles.forEach(function (p) { return p.animate(p, timediff, clearrunner, totaltime); });
+    particles.forEach(function (p) { return p.animate(timediff, clearrunner, totaltime); });
     if (clear)
         clearrunner -= timediff / 500;
     if (clearrunner <= 0) {
@@ -78,7 +78,7 @@ function gumInit() {
     navigator.getUserMedia({ video: true }, gumSuccess, gumError);
 }
 $(document).keypress(function (event) {
-    console.log(event);
+    //console.log(event);
     if (event.charCode == 32)
         clear = true;
     //if (event.charCode == 49) activeLine = lava;
@@ -89,20 +89,20 @@ $(document).keypress(function (event) {
     // if (event.charCode == 77) activeLine = martin;
 });
 $(document).bind('mousedown touchstart', function (event) {
-    console.log('Click');
+    //console.log('Click');
     mousedown = true;
 });
 $(document).bind('mouseup touchend', function (event) {
     mousedown = false;
     lastx = lasty = false;
-    console.log('Click end');
+    //console.log('Click end');
 });
 $(document).bind('mousemove touchmove', function (e) {
     var event = e;
     if (e.type == "touchmove")
         event = e.originalEvent.touches[0];
-    console.log('Move');
-    console.log(event);
+    //console.log('Move');
+    //console.log(event);
     if (!mousedown || drawing)
         return;
     if (_.isInteger(lastx)) {
@@ -129,22 +129,23 @@ $(document).bind('mousemove touchmove', function (e) {
     lasty = event.pageY;
 });
 var Particle = /** @class */ (function () {
-    function Particle(mesh, x, y, z, offset, opacityOffset, animate) {
+    function Particle(mesh, x, y, z, offset, opacityOffset) {
         this.mesh = mesh;
         this.x = x;
         this.y = y;
         this.z = z;
         this.offset = offset;
         this.opacityOffset = opacityOffset;
-        this.animate = animate;
         this.birth = 0;
     }
+    Particle.prototype.animate = function (timediff, clearrunner, totaltime) {
+    };
     return Particle;
 }());
 var LineType = /** @class */ (function () {
     function LineType() {
     }
-    LineType.prototype.newPoint = function (scene, particles, posx, posy, direction) {
+    LineType.prototype.newPoint = function (particles, posx, posy, direction) {
     };
     return LineType;
 }());
@@ -196,9 +197,9 @@ var LineType = /** @class */ (function () {
 //   }
 //
 // }
-var Lava = /** @class */ (function (_super) {
-    __extends(Lava, _super);
-    function Lava() {
+var LineLava = /** @class */ (function (_super) {
+    __extends(LineLava, _super);
+    function LineLava() {
         var _this = _super.call(this) || this;
         var glowball = THREE.ImageUtils.loadTexture("img/glowball2.png");
         _this.lavamaterial = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.AdditiveBlending });
@@ -207,58 +208,68 @@ var Lava = /** @class */ (function (_super) {
         _this.every = 0;
         return _this;
     }
-    Lava.prototype.newPoint = function (scene, particles, posx, posy, direction) {
+    LineLava.prototype.newPoint = function (particles, posx, posy, direction) {
         this.every++;
         this.every %= 6;
-        particles.push(this.newLava(scene, posx, posy));
+        particles.push(new ParticleLava(this.lavamaterial, posx, posy));
         if (this.every == 0)
-            particles.push(this.newStone(scene, posx, posy));
+            particles.push(new ParticleStone(this.stonematerial, posx, posy));
     };
-    Lava.prototype.newLava = function (scene, posx, posy) {
+    return LineLava;
+}(LineType));
+var ParticleLava = /** @class */ (function (_super) {
+    __extends(ParticleLava, _super);
+    function ParticleLava(_material, posx, posy) {
+        var _this = this;
         var geometry = new THREE.PlaneGeometry(15, 15);
-        var material = this.lavamaterial.clone();
+        var material = _material.clone();
         var offset = Math.random() * Math.PI * 2;
         var opacityOffset = Math.random();
         var mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
         scene.add(mesh);
-        var part = new Particle(mesh, posx, posy, 0, offset, opacityOffset, this.animateLava);
-        return part;
+        _this = _super.call(this, mesh, posx, posy, 0, offset, opacityOffset) || this;
+        return _this;
+    }
+    ParticleLava.prototype.animate = function (timediff, clearrunner, totaltime) {
+        this.offset += timediff / 5000;
+        this.offset %= Math.PI * 2;
+        var x = this.x + Math.sin(this.offset) * 4;
+        var y = this.y + Math.cos(this.offset) * 4;
+        this.mesh.position.set(x, y, this.z);
+        this.mesh.material[0].opacity = (Math.sin(this.offset * 3) * 0.7 + 0.3) * clearrunner;
+        this.mesh.rotation.z += timediff / 5000;
+        this.mesh.rotation.z %= Math.PI * 2;
+        this.mesh.scale.set(2 - clearrunner * this.birth, 2 - clearrunner * this.birth, 1);
+        if (this.birth < 1)
+            this.birth += timediff / 1000;
     };
-    Lava.prototype.newStone = function (scene, posx, posy) {
+    return ParticleLava;
+}(Particle));
+var ParticleStone = /** @class */ (function (_super) {
+    __extends(ParticleStone, _super);
+    function ParticleStone(_material, posx, posy) {
+        var _this = this;
         var geometry = new THREE.PlaneGeometry(20, 20);
-        var material = this.stonematerial.clone();
+        var material = _material.clone();
         var offset = Math.random() * Math.PI * 2;
         var opacityOffset = Math.random();
         var mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
         mesh.scale.set(0, 0, 0);
         scene.add(mesh);
-        var part = new Particle(mesh, posx, posy, -0.1, offset, opacityOffset, this.animateStone);
-        return part;
+        _this = _super.call(this, mesh, posx, posy, -0.1, offset, opacityOffset) || this;
+        return _this;
+    }
+    ParticleStone.prototype.animate = function (timediff, clearrunner, totaltime) {
+        this.mesh.position.set(this.x, this.y, this.z);
+        this.mesh.scale.set(this.birth * clearrunner, this.birth * clearrunner, 1);
+        this.mesh.material[0].opacity = clearrunner;
+        if (this.birth < 1)
+            this.birth += timediff / 1000;
     };
-    Lava.prototype.animateLava = function (part, timediff, clearrunner) {
-        part.offset += timediff / 5000;
-        part.offset %= Math.PI * 2;
-        var x = part.x + Math.sin(part.offset) * 4;
-        var y = part.y + Math.cos(part.offset) * 4;
-        part.mesh.position.set(x, y, part.z);
-        part.mesh.material[0].opacity = (Math.sin(part.offset * 3) * 0.7 + 0.3) * clearrunner;
-        part.mesh.rotation.z += timediff / 5000;
-        part.mesh.rotation.z %= Math.PI * 2;
-        part.mesh.scale.set(2 - clearrunner * part.birth, 2 - clearrunner * part.birth, 1);
-        if (part.birth < 1)
-            part.birth += timediff / 1000;
-    };
-    Lava.prototype.animateStone = function (part, timediff, clearrunner) {
-        part.mesh.position.set(part.x, part.y, part.z);
-        part.mesh.scale.set(part.birth * clearrunner, part.birth * clearrunner, 1);
-        part.mesh.material[0].opacity = clearrunner;
-        if (part.birth < 1)
-            part.birth += timediff / 1000;
-    };
-    return Lava;
-}(LineType));
+    return ParticleStone;
+}(Particle));
 // function lineMagic () {
 //   this.every = 0;
 //   this.total = 0;

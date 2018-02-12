@@ -1,4 +1,4 @@
-class Lava extends LineType {
+class LineLava extends LineType {
   lavamaterial: THREE.MeshBasicMaterial;
   stonematerial: THREE.MeshBasicMaterial;
   every: number;
@@ -15,75 +15,65 @@ class Lava extends LineType {
     this.every = 0;
   }
 
-  newPoint (scene: THREE.Scene, particles: Particle[], posx: number, posy: number, direction: number) {
+  newPoint (particles: Particle[], posx: number, posy: number, direction: number) {
     this.every ++;
     this.every %= 6;
-    particles.push(this.newLava(scene, posx, posy));
-    if (this.every == 0) particles.push(this.newStone(scene, posx, posy));
-
+    particles.push(new ParticleLava(this.lavamaterial, posx, posy));
+    if (this.every == 0) particles.push(new ParticleStone(this.stonematerial, posx, posy));
   }
+}
 
-  newLava (scene: THREE.Scene, posx: number, posy: number) : Particle {
+class ParticleLava extends Particle {
+  constructor (_material: THREE.MeshBasicMaterial, posx: number, posy: number) {
     var geometry = new THREE.PlaneGeometry( 15, 15 );
-
-    let material = this.lavamaterial.clone();
-
+    let material = _material.clone();
     let offset = Math.random() * Math.PI * 2;
     let opacityOffset = Math.random();
 
     let mesh = new THREE.Mesh( geometry, [material] );
     mesh.rotation.z = Math.random() * Math.PI * 2;
+    scene.add(mesh);
 
-    scene.add( mesh );
-
-    var part = new Particle(mesh, posx, posy, 0, offset, opacityOffset, this.animateLava);
-
-    return part;
+    super(mesh, posx, posy, 0, offset, opacityOffset);
   }
 
-  newStone (scene: THREE.Scene, posx: number, posy: number) : Particle {
+  animate (timediff: number, clearrunner: number, totaltime: number) {
+    this.offset += timediff/5000;
+    this.offset %= Math.PI * 2;
 
+    let x = this.x + Math.sin(this.offset) * 4;
+    let y = this.y + Math.cos(this.offset) * 4;
+    this.mesh.position.set(x, y, this.z);
+    this.mesh.material[0].opacity = (Math.sin(this.offset*3) *0.7 + 0.3)*clearrunner;
+    this.mesh.rotation.z += timediff/5000;
+    this.mesh.rotation.z %= Math.PI * 2;
+    this.mesh.scale.set(2-clearrunner*this.birth,2-clearrunner*this.birth,1);
+
+    if (this.birth < 1) this.birth += timediff / 1000;
+  }
+}
+
+class ParticleStone extends Particle {
+  constructor (_material: THREE.MeshBasicMaterial, posx: number, posy: number) {
     let geometry = new THREE.PlaneGeometry( 20, 20 );
-    let material = this.stonematerial.clone();
+    let material = _material.clone();
     let offset = Math.random() * Math.PI * 2;
     let opacityOffset = Math.random();
 
     let mesh = new THREE.Mesh( geometry, [material] );
 
-
     mesh.rotation.z = Math.random() * Math.PI * 2;
-
     mesh.scale.set(0,0,0);
+    scene.add(mesh);
 
-    scene.add( mesh );
-
-    var part = new Particle(mesh, posx, posy, -0.1, offset, opacityOffset, this.animateStone);
-
-    return part;
+    super(mesh, posx,  posy, -0.1, offset, opacityOffset);
   }
 
-  animateLava (part: Particle, timediff: number, clearrunner: number) {
-    part.offset += timediff/5000;
-    part.offset %= Math.PI * 2;
+  animate (timediff: number, clearrunner: number, totaltime: number) {
+    this.mesh.position.set(this.x, this.y, this.z);
+    this.mesh.scale.set(this.birth*clearrunner,this.birth*clearrunner,1);
+    this.mesh.material[0].opacity = clearrunner;
 
-    let x = part.x + Math.sin(part.offset) * 4;
-    let y = part.y + Math.cos(part.offset) * 4;
-    part.mesh.position.set(x, y, part.z);
-    part.mesh.material[0].opacity = (Math.sin(part.offset*3) *0.7 + 0.3)*clearrunner;
-    part.mesh.rotation.z += timediff/5000;
-    part.mesh.rotation.z %= Math.PI * 2;
-    part.mesh.scale.set(2-clearrunner*part.birth,2-clearrunner*part.birth,1);
-
-    if (part.birth < 1) part.birth += timediff / 1000;
+    if (this.birth < 1) this.birth += timediff / 1000;
   }
-
-  animateStone (part: Particle, timediff: number, clearrunner: number) {
-    part.mesh.position.set(part.x, part.y, part.z);
-    part.mesh.scale.set(part.birth*clearrunner,part.birth*clearrunner,1);
-    part.mesh.material[0].opacity = clearrunner;
-
-    if (part.birth < 1) part.birth += timediff / 1000;
-
-  }
-
 }

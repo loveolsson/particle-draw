@@ -29,7 +29,7 @@ var video;
 
 
 $( function() {
-  lineTypes.push(new Lava());
+  lineTypes.push(new LineLava());
 
 
   video = document.querySelector('video');
@@ -43,7 +43,7 @@ $( function() {
 });
 
 function createPoint (posx: number, posy: number, direction: number) {
-  lineTypes[0].newPoint (scene, particles, posx, posy, direction);
+  lineTypes[0].newPoint (particles, posx, posy, direction);
 }
 
 function render() {
@@ -60,7 +60,7 @@ function render() {
   renderer.render(scene, camera);
   requestAnimationFrame(render);
 
-  particles.forEach(p => p.animate(p, timediff, clearrunner, totaltime));
+  particles.forEach(p => p.animate(timediff, clearrunner, totaltime));
 
   if (clear) clearrunner -= timediff / 500;
 
@@ -98,7 +98,7 @@ function gumInit() {
 
 
 $(document).keypress(function(event) {
-  console.log(event);
+  //console.log(event);
 
   if (event.charCode == 32) clear = true;
   //if (event.charCode == 49) activeLine = lava;
@@ -110,14 +110,14 @@ $(document).keypress(function(event) {
 });
 
 $(document).bind('mousedown touchstart', function(event) {
-  console.log('Click');
+  //console.log('Click');
   mousedown = true;
 });
 
 $(document).bind('mouseup touchend', function(event) {
   mousedown = false;
   lastx = lasty = false;
-      console.log('Click end');
+      //console.log('Click end');
 
 });
 
@@ -127,8 +127,8 @@ $(document).bind('mousemove touchmove', function(e) {
   if (e.type == "touchmove") event = e.originalEvent.touches[0];
 
 
-      console.log('Move');
-      console.log(event);
+      //console.log('Move');
+      //console.log(event);
 
   if (!mousedown || drawing) return;
 
