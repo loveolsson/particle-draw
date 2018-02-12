@@ -10,6 +10,9 @@
   html, body {
     margin: 0;
     padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
   }
 
   body {
@@ -18,9 +21,39 @@
     background-repeat: no-repeat;
 
   }
+
+  .btn {
+    position: absolute;
+    right: 1em;
+    width: 5em;
+    height: 5em;
+  }
+
+  #play {
+    top: 15em;
+  }
+  #stop {
+    top: 25em;
+  }
+
+  #l1 {
+    top: 35em;
+  }
+  #l2 {
+    top: 40em;
+  }
+ #l3 {
+    top: 45em;
+  }
   </style>
 </head>
 </body>
-<video style="width: 1280px; height: 720px; position: absolute;" />
+<video style="width: 1920px; height: 1080px; position: absolute;"></video>
+
+<button class="btn" id="play" onclick="playVT(); clearDraw();">Play</button>
+<button class="btn" id="stop" onclick="stopVT(); clearDraw();">Stop</button>
+<button class="btn" id="l1" onclick="setActiveLine(0);">L1</button>
+<button class="btn" id="l2" onclick="setActiveLine(1);">L2</button>
+<button class="btn" id="l3" onclick="setActiveLine(2);">Arrows</button>
 </body>
 </html>

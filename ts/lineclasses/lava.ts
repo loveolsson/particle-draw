@@ -15,7 +15,7 @@ class LineLava extends LineType {
     this.every = 0;
   }
 
-  newPoint (particles: Particle[], posx: number, posy: number, direction: number) {
+  newDrag (particles: Particle[], posx: number, posy: number, direction: number) {
     this.every ++;
     this.every %= 6;
     particles.push(new ParticleLava(this.lavamaterial, posx, posy));

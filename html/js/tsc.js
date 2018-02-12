@@ -1,5 +1,6 @@
 var lineTypes = [];
 const SW = 1920, SH = 1080;
+const VW = 1920, VH = 1080;
 var scene = new THREE.Scene();
 var camera = new THREE.OrthographicCamera(SW / -2, SW / 2, SH / 2, SH / -2, 0, 2000);
 camera.position.set(SW / 2, SH / 2, 100);
@@ -10,20 +11,22 @@ var clearrunner = 1;
 var clear = false;
 var totaltime = 0;
 var time = 0; //Time of last frame
+var activeLine = 1;
 var mousedown = false; //Draw things if mouse is down
 var lastx, lasty; //
 var drawing = false; // Is true during drawing loop
 var video;
 $(function () {
     lineTypes.push(new LineLava());
+    lineTypes.push(new LineRed());
+    lineTypes.push(new LineArrow());
     video = document.querySelector('video');
     gumInit();
     render();
     var e = $(renderer.domElement).css({ position: 'absolute' });
-    $('body').append(e);
+    e.insertAfter($('video'));
 });
 function createPoint(posx, posy, direction) {
-    lineTypes[0].newPoint(particles, posx, posy, direction);
 }
 function render() {
     var d = new Date();
@@ -56,7 +59,7 @@ function gumError(error) {
     console.error('Error on getUserMedia', error);
 }
 function gumInit() {
-    navigator.getUserMedia({ video: true }, gumSuccess, gumError);
+    navigator.getUserMedia({ video: { width: VW, height: VH } }, gumSuccess, gumError);
 }
 $(document).keypress(function (event) {
     //console.log(event);
@@ -69,21 +72,37 @@ $(document).keypress(function (event) {
     // if (event.charCode == 53) activeLine = redline;
     // if (event.charCode == 77) activeLine = martin;
 });
-$(document).bind('mousedown touchstart', function (event) {
+$(document).bind('touchstart', function (e) {
     //console.log('Click');
+    if ($(e.target).hasClass('btn')) {
+        return;
+    }
+    let pageX;
+    let pageY;
+    if (e.type == "touchstart") {
+        pageX = e.touches[0].clientX;
+        pageY = e.touches[0].clientY;
+    }
+    else if (e.type == "mousedown") {
+        pageX = e.pageX;
+        pageY = e.pageY;
+    }
+    lineTypes[activeLine].newStart(particles, pageX, SH - pageY);
     mousedown = true;
+    stopVT();
 });
-$(document).bind('mouseup touchend', function (event) {
+$(document).bind('mouseup touchend', function (e) {
     mousedown = false;
     lastx = lasty = -1;
+    console.warn("touch end!!!!");
     //console.log('Click end');
 });
 $(document).bind('mousemove touchmove', function (e) {
     let pageX;
     let pageY;
     if (e.type == "touchmove") {
-        pageX = e.touches[0].pageX;
-        pageY = e.touches[0].pageY;
+        pageX = e.touches[0].clientX;
+        pageY = e.touches[0].clientY;
     }
     else if (e.type == "mousemove") {
         pageX = e.pageX;
@@ -91,7 +110,7 @@ $(document).bind('mousemove touchmove', function (e) {
     }
     if (!mousedown || drawing)
         return;
-    if (lastx >= 0) {
+    if (lastx != -1 && lasty != -1) {
         drawing = true;
         var distx = pageX - lastx;
         var disty = pageY - lasty;
@@ -107,13 +126,28 @@ $(document).bind('mousemove touchmove', function (e) {
             var deltaX = x - oldx;
             var deltaY = oldy - y;
             let direction = Math.atan2(deltaY, deltaX);
-            createPoint(x, SH - y, direction);
+            lineTypes[activeLine].newDrag(particles, x, SH - y, direction);
         }
         drawing = false;
     }
     lastx = pageX;
     lasty = pageY;
 });
+function playVT() {
+    sendKey('c3869276-a102-4248-9d9c-81999ca4d0eb');
+}
+function stopVT() {
+    sendKey('1023b31d-8d72-4613-bc3e-d87aae09e1a5');
+}
+function clearDraw() {
+    clear = true;
+}
+function setActiveLine(no) {
+    activeLine = no;
+}
+function sendKey(uuid) {
+    $.get('http://192.168.10.56:8088/?shortcut=' + uuid);
+}
 class Particle {
     constructor(mesh, x, y, z, offset, opacityOffset) {
         this.mesh = mesh;
@@ -130,57 +164,49 @@ class Particle {
 class LineType {
     constructor() {
     }
-    newPoint(particles, posx, posy, direction) {
+    newStart(particles, posx, posy) {
+    }
+    newDrag(particles, posx, posy, direction) {
     }
 }
-// function lineArrow () {
-//   this.every = 0;
-//   this.arrowtexture = THREE.ImageUtils.loadTexture( "img/arrow.png" );
-//   this.arrowmaterial = new THREE.MeshBasicMaterial({map: this.arrowtexture, transparent: true, blending: THREE.AdditiveBlending});
-//
-//
-//   this.newPoint = function (scene, particles, posx, posy, direction) {
-//     this.every ++;
-//     this.every %= 30;
-//     if (this.every == 0) this.newArrow(scene, particles, posx, posy, direction);
-//
-//   }
-//
-//   this.newArrow = function (scene, particles, posx, posy, direction) {
-//     var part = new Particle();
-//
-//     var geometry = new THREE.PlaneGeometry( 60, 60 );
-//     part.material = this.arrowmaterial.clone();
-//     part.x = posx;
-//     part.y = posy;
-//
-//     part.birth = 0;
-//
-//     part.object = new THREE.Mesh( geometry, part.material );
-//     part.object.rotation.z = direction-Math.PI/2;
-//     part.object.position.z = -0.1;
-//     part.object.position.x = posx;
-//     part.object.position.y = posy;
-//     part.object.scale.set(0,0,0);
-//
-//     part.animate = this.animateArrow;
-//
-//
-//     particles[particles.length] = part;
-//
-//     scene.add( part.object );
-//
-//   }
-//
-//   this.animateArrow = function (part, timediff, clearrunner) {
-//     part.object.scale.set(part.birth*clearrunner,part.birth*clearrunner,1);
-//     part.object.material.opacity = clearrunner;
-//
-//     if (part.birth < 1) part.birth += timediff / 1000;
-//
-//   }
-//
-// }
+class LineArrow extends LineType {
+    constructor() {
+        super();
+        let stone = THREE.ImageUtils.loadTexture("img/arrow.png");
+        this.arrowmaterial = new THREE.MeshBasicMaterial({ map: stone, transparent: true, blending: THREE.NormalBlending });
+        this.every = 0;
+    }
+    newStart(particles, posx, posy) {
+        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 0, 0, -800));
+        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 1.5, -800, 0));
+        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 1, 0, 800));
+        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 0.5, 800, 0));
+    }
+}
+class ParticleArrow extends Particle {
+    constructor(_material, posx, posy, rotation, offX, offY) {
+        var geometry = new THREE.PlaneGeometry(70, 70);
+        let material = _material;
+        let offset = 0;
+        let opacityOffset = 0;
+        let mesh = new THREE.Mesh(geometry, [material]);
+        mesh.rotation.z = rotation;
+        mesh.position.set(posx + offX, posy + offY, 0);
+        scene.add(mesh);
+        super(mesh, posx, posy, 0, offset, opacityOffset);
+        this.offX = offX;
+        this.offY = offY;
+    }
+    animate(timediff, clearrunner, totaltime) {
+        if (this.birth < 1) {
+            this.birth += timediff / 700;
+            let inv = 1 - this.birth * 0.90;
+            let x = this.x + inv * this.offX;
+            let y = this.y + inv * this.offY;
+            this.mesh.position.set(x, y, this.z);
+        }
+    }
+}
 class LineLava extends LineType {
     constructor() {
         super();
@@ -190,7 +216,7 @@ class LineLava extends LineType {
         this.stonematerial = new THREE.MeshBasicMaterial({ map: stone, transparent: true, blending: THREE.NormalBlending });
         this.every = 0;
     }
-    newPoint(particles, posx, posy, direction) {
+    newDrag(particles, posx, posy, direction) {
         this.every++;
         this.every %= 6;
         particles.push(new ParticleLava(this.lavamaterial, posx, posy));
@@ -432,6 +458,33 @@ class ParticleStone extends Particle {
 //   }
 //
 // }
+class LineRed extends LineType {
+    constructor() {
+        super();
+        let glowball = THREE.ImageUtils.loadTexture("img/redline.png");
+        this.redlinematerial = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
+        this.every = 0;
+    }
+    newDrag(particles, posx, posy, direction) {
+        this.every++;
+        if ((this.every %= 1) == 0)
+            particles.push(new ParticleRedLine(this.redlinematerial, posx, posy, direction));
+    }
+}
+class ParticleRedLine extends Particle {
+    constructor(_material, posx, posy, direction) {
+        let geometry = new THREE.PlaneGeometry(10, 10);
+        let material = _material;
+        let offset = 0;
+        let opacityOffset = 0;
+        let mesh = new THREE.Mesh(geometry, [material]);
+        mesh.rotation.z = direction - Math.PI / 2;
+        mesh.position.x = posx;
+        mesh.position.y = posy;
+        scene.add(mesh);
+        super(mesh, posx, posy, 0, offset, opacityOffset);
+    }
+}
 // function lineRubin () {
 //   this.every = 0;
 //   this.glowball = THREE.ImageUtils.loadTexture( "img/crystal_glow.png" );

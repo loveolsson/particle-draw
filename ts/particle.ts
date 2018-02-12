@@ -13,6 +13,8 @@ class LineType {
   constructor () {
   }
 
-  newPoint (particles: Particle[], posx: number, posy: number, direction: number) {
+  newStart (particles: Particle[], posx: number, posy: number) {
+  }
+  newDrag (particles: Particle[], posx: number, posy: number, direction: number) {
   }
 }
