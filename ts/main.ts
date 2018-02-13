@@ -19,7 +19,8 @@ var time:number = 0; //Time of last frame
 var activeLine:number = 1;
 
 var mousedown:boolean = false; //Draw things if mouse is down
-var lastx:number, lasty: number; //
+//var lastx:number, lasty: number; //
+var lastPos:THREE.Vector2;
 
 var drawing:boolean = false; // Is true during drawing loop
 var video: HTMLVideoElement;
@@ -42,9 +43,7 @@ function createPoint (posx: number, posy: number, direction: number) {
 }
 
 function render() {
-  var d = new Date();
-  var n = d.getTime();
-
+  let n = new Date().getTime();
   if (time == 0) time = n;
 
   var timediff = n - time;
@@ -61,10 +60,13 @@ function render() {
 
   if (clearrunner <= 0) {
     clear = false;
-    for (var x in particles) {
-      scene.remove(particles[x].mesh);
-      delete particles[x];
-    }
+    particles.forEach(p => {
+      scene.remove(p.mesh)
+      p.mesh.geometry.dispose();
+      p.mesh.material[0].dispose();
+    });
+
+    particles = [];
     clearrunner = 1;
   }
 
@@ -98,24 +100,20 @@ $(document).keypress(function(event) {
   // if (event.charCode == 53) activeLine = redline;
   // if (event.charCode == 77) activeLine = martin;
 });
-$(document).bind('touchstart', function(e) {
+$(document).bind('touchstart mousedown', function(e) {
   //console.log('Click');
   if ($(e.target).hasClass('btn')) {
     return;
   }
 
-  let pageX: number;
-  let pageY: number;
+  let pagePos: THREE.Vector2;
 
   if (e.type == "touchstart") {
-    pageX = e.touches[0].clientX;
-    pageY = e.touches[0].clientY;
+    //pagePos = new THREE.Vector2(e.touches[0].clientX, SH-e.touches[0].clientY);
   } else if (e.type == "mousedown") {
-    pageX = e.pageX;
-    pageY = e.pageY;
+    pagePos = new THREE.Vector2(e.pageX, SH-e.pageY);
+    lineTypes[activeLine].newStart(particles, pagePos);
   }
-
-  lineTypes[activeLine].newStart(particles, pageX, SH-pageY);
 
   mousedown = true;
   stopVT();
@@ -123,7 +121,7 @@ $(document).bind('touchstart', function(e) {
 
 $(document).bind('mouseup touchend', function(e) {
   mousedown = false;
-  lastx = lasty = -1;
+  lastPos = null;
   console.warn("touch end!!!!");
 
       //console.log('Click end');
@@ -132,52 +130,36 @@ $(document).bind('mouseup touchend', function(e) {
 
 $(document).bind('mousemove touchmove', function(e) {
 
-  let pageX: number;
-  let pageY: number;
+  let pagePos: THREE.Vector2;
 
   if (e.type == "touchmove") {
-    pageX = e.touches[0].clientX;
-    pageY = e.touches[0].clientY;
+    pagePos = new THREE.Vector2(e.touches[0].clientX, SH-e.touches[0].clientY);
   } else if (e.type == "mousemove") {
-    pageX = e.pageX;
-    pageY = e.pageY;
+    pagePos = new THREE.Vector2(e.pageX, SH-e.pageY);
   }
 
   if (!mousedown || drawing) return;
 
-  if (lastx != -1 && lasty != -1) {
+  if (lastPos) {
     drawing = true;
-    var distx = pageX - lastx;
-    var disty = pageY - lasty;
+    let dist = pagePos.distanceTo(lastPos);
 
-    var distance = Math.sqrt(distx*distx + disty*disty)/2;
+    let prevPos = lastPos;
+    for (var i = 0; i <= 1; i+=1/dist) {
+      let pointPos = lastPos.clone().lerp(pagePos, i);
 
+      let delta = pointPos.clone().sub(prevPos);
+      prevPos = pointPos.clone();
 
-    var x = lastx;
-    var y = lasty;
+      let direction = Math.atan2(delta.y, delta.x);
 
-    for (var i = 0; i<distance - 1; i++) {
-
-      var oldx = x;
-      var oldy = y;
-
-      x += distx / distance;
-      y += disty / distance;
-
-      //Calculate direction i radians
-      var deltaX = x - oldx;
-      var deltaY = oldy -y;
-
-      let direction = Math.atan2(deltaY, deltaX);
-
-      lineTypes[activeLine].newDrag(particles, x, SH-y, direction);
+      lineTypes[activeLine].newDrag(particles, pointPos, direction);
     }
 
     drawing = false;
   }
 
-  lastx = pageX;
-  lasty = pageY;
+  lastPos = pagePos;
 });
 
 

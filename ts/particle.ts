@@ -1,6 +1,6 @@
 class Particle {
     birth: number;
-    constructor(public mesh: THREE.Mesh, public x: number, public y: number, public z: number, public offset: number,
+    constructor(public mesh: THREE.Mesh, public pos: THREE.Vector3, public offset: number,
       public opacityOffset: number) {
       this.birth = 0;
     }
@@ -13,8 +13,8 @@ class LineType {
   constructor () {
   }
 
-  newStart (particles: Particle[], posx: number, posy: number) {
+  newStart (particles: Particle[], pos: THREE.Vector2) {
   }
-  newDrag (particles: Particle[], posx: number, posy: number, direction: number) {
+  newDrag (particles: Particle[], pos: THREE.Vector2, direction: number) {
   }
 }

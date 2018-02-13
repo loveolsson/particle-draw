@@ -13,7 +13,8 @@ var totaltime = 0;
 var time = 0; //Time of last frame
 var activeLine = 1;
 var mousedown = false; //Draw things if mouse is down
-var lastx, lasty; //
+//var lastx:number, lasty: number; //
+var lastPos;
 var drawing = false; // Is true during drawing loop
 var video;
 $(function () {
@@ -29,8 +30,7 @@ $(function () {
 function createPoint(posx, posy, direction) {
 }
 function render() {
-    var d = new Date();
-    var n = d.getTime();
+    let n = new Date().getTime();
     if (time == 0)
         time = n;
     var timediff = n - time;
@@ -43,10 +43,12 @@ function render() {
         clearrunner -= timediff / 500;
     if (clearrunner <= 0) {
         clear = false;
-        for (var x in particles) {
-            scene.remove(particles[x].mesh);
-            delete particles[x];
-        }
+        particles.forEach(p => {
+            scene.remove(p.mesh);
+            p.mesh.geometry.dispose();
+            p.mesh.material[0].dispose();
+        });
+        particles = [];
         clearrunner = 1;
     }
 }
@@ -72,66 +74,52 @@ $(document).keypress(function (event) {
     // if (event.charCode == 53) activeLine = redline;
     // if (event.charCode == 77) activeLine = martin;
 });
-$(document).bind('touchstart', function (e) {
+$(document).bind('touchstart mousedown', function (e) {
     //console.log('Click');
     if ($(e.target).hasClass('btn')) {
         return;
     }
-    let pageX;
-    let pageY;
+    let pagePos;
     if (e.type == "touchstart") {
-        pageX = e.touches[0].clientX;
-        pageY = e.touches[0].clientY;
+        //pagePos = new THREE.Vector2(e.touches[0].clientX, SH-e.touches[0].clientY);
     }
     else if (e.type == "mousedown") {
-        pageX = e.pageX;
-        pageY = e.pageY;
+        pagePos = new THREE.Vector2(e.pageX, SH - e.pageY);
+        lineTypes[activeLine].newStart(particles, pagePos);
     }
-    lineTypes[activeLine].newStart(particles, pageX, SH - pageY);
     mousedown = true;
     stopVT();
 });
 $(document).bind('mouseup touchend', function (e) {
     mousedown = false;
-    lastx = lasty = -1;
+    lastPos = null;
     console.warn("touch end!!!!");
     //console.log('Click end');
 });
 $(document).bind('mousemove touchmove', function (e) {
-    let pageX;
-    let pageY;
+    let pagePos;
     if (e.type == "touchmove") {
-        pageX = e.touches[0].clientX;
-        pageY = e.touches[0].clientY;
+        pagePos = new THREE.Vector2(e.touches[0].clientX, SH - e.touches[0].clientY);
     }
     else if (e.type == "mousemove") {
-        pageX = e.pageX;
-        pageY = e.pageY;
+        pagePos = new THREE.Vector2(e.pageX, SH - e.pageY);
     }
     if (!mousedown || drawing)
         return;
-    if (lastx != -1 && lasty != -1) {
+    if (lastPos) {
         drawing = true;
-        var distx = pageX - lastx;
-        var disty = pageY - lasty;
-        var distance = Math.sqrt(distx * distx + disty * disty) / 2;
-        var x = lastx;
-        var y = lasty;
-        for (var i = 0; i < distance - 1; i++) {
-            var oldx = x;
-            var oldy = y;
-            x += distx / distance;
-            y += disty / distance;
-            //Calculate direction i radians
-            var deltaX = x - oldx;
-            var deltaY = oldy - y;
-            let direction = Math.atan2(deltaY, deltaX);
-            lineTypes[activeLine].newDrag(particles, x, SH - y, direction);
+        let dist = pagePos.distanceTo(lastPos);
+        let prevPos = lastPos;
+        for (var i = 0; i <= 1; i += 1 / dist) {
+            let pointPos = lastPos.clone().lerp(pagePos, i);
+            let delta = pointPos.clone().sub(prevPos);
+            prevPos = pointPos.clone();
+            let direction = Math.atan2(delta.y, delta.x);
+            lineTypes[activeLine].newDrag(particles, pointPos, direction);
         }
         drawing = false;
     }
-    lastx = pageX;
-    lasty = pageY;
+    lastPos = pagePos;
 });
 function playVT() {
     sendKey('c3869276-a102-4248-9d9c-81999ca4d0eb');
@@ -149,11 +137,9 @@ function sendKey(uuid) {
     $.get('http://192.168.10.56:8088/?shortcut=' + uuid);
 }
 class Particle {
-    constructor(mesh, x, y, z, offset, opacityOffset) {
+    constructor(mesh, pos, offset, opacityOffset) {
         this.mesh = mesh;
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.pos = pos;
         this.offset = offset;
         this.opacityOffset = opacityOffset;
         this.birth = 0;
@@ -164,9 +150,9 @@ class Particle {
 class LineType {
     constructor() {
     }
-    newStart(particles, posx, posy) {
+    newStart(particles, pos) {
     }
-    newDrag(particles, posx, posy, direction) {
+    newDrag(particles, pos, direction) {
     }
 }
 class LineArrow extends LineType {
@@ -174,36 +160,37 @@ class LineArrow extends LineType {
         super();
         let stone = THREE.ImageUtils.loadTexture("img/arrow.png");
         this.arrowmaterial = new THREE.MeshBasicMaterial({ map: stone, transparent: true, blending: THREE.NormalBlending });
+        this.geometry = new THREE.PlaneGeometry(70, 70);
         this.every = 0;
     }
-    newStart(particles, posx, posy) {
-        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 0, 0, -800));
-        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 1.5, -800, 0));
-        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 1, 0, 800));
-        particles.push(new ParticleArrow(this.arrowmaterial, posx, posy, Math.PI * 0.5, 800, 0));
+    newStart(particles, pos) {
+        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 0, new THREE.Vector2(0, -800)));
+        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 1.5, new THREE.Vector2(-800, 0)));
+        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 1, new THREE.Vector2(0, 800)));
+        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 0.5, new THREE.Vector2(800, 0)));
     }
 }
 class ParticleArrow extends Particle {
-    constructor(_material, posx, posy, rotation, offX, offY) {
-        var geometry = new THREE.PlaneGeometry(70, 70);
+    constructor(_material, _geometry, pos, rotation, off) {
+        var geometry = _geometry;
         let material = _material;
         let offset = 0;
         let opacityOffset = 0;
         let mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = rotation;
-        mesh.position.set(posx + offX, posy + offY, 0);
+        let offsetPos = pos.clone().add(off);
+        mesh.position.set(offsetPos.x, offsetPos.y, 0);
         scene.add(mesh);
-        super(mesh, posx, posy, 0, offset, opacityOffset);
-        this.offX = offX;
-        this.offY = offY;
+        super(mesh, new THREE.Vector3(pos.x, pos.y, 0), offset, opacityOffset);
+        this.off = off;
     }
     animate(timediff, clearrunner, totaltime) {
         if (this.birth < 1) {
             this.birth += timediff / 700;
             let inv = 1 - this.birth * 0.90;
-            let x = this.x + inv * this.offX;
-            let y = this.y + inv * this.offY;
-            this.mesh.position.set(x, y, this.z);
+            let x = this.pos.x + inv * this.off.x;
+            let y = this.pos.y + inv * this.off.y;
+            this.mesh.position.set(x, y, this.pos.z);
         }
     }
 }
@@ -214,33 +201,35 @@ class LineLava extends LineType {
         this.lavamaterial = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.AdditiveBlending });
         let stone = THREE.ImageUtils.loadTexture("img/stone.png");
         this.stonematerial = new THREE.MeshBasicMaterial({ map: stone, transparent: true, blending: THREE.NormalBlending });
+        this.lavageometry = new THREE.PlaneGeometry(15, 15);
+        this.stonegeometry = new THREE.PlaneGeometry(20, 20);
         this.every = 0;
     }
-    newDrag(particles, posx, posy, direction) {
+    newDrag(particles, pos, direction) {
         this.every++;
         this.every %= 6;
-        particles.push(new ParticleLava(this.lavamaterial, posx, posy));
+        particles.push(new ParticleLava(this.lavamaterial, this.lavageometry, pos));
         if (this.every == 0)
-            particles.push(new ParticleStone(this.stonematerial, posx, posy));
+            particles.push(new ParticleStone(this.stonematerial, this.stonegeometry, pos));
     }
 }
 class ParticleLava extends Particle {
-    constructor(_material, posx, posy) {
-        var geometry = new THREE.PlaneGeometry(15, 15);
+    constructor(_material, _geometry, pos) {
+        var geometry = _geometry;
         let material = _material.clone();
         let offset = Math.random() * Math.PI * 2;
         let opacityOffset = Math.random();
         let mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
         scene.add(mesh);
-        super(mesh, posx, posy, 0, offset, opacityOffset);
+        super(mesh, new THREE.Vector3(pos.x, pos.y, 0), offset, opacityOffset);
     }
     animate(timediff, clearrunner, totaltime) {
         this.offset += timediff / 5000;
         this.offset %= Math.PI * 2;
-        let x = this.x + Math.sin(this.offset) * 4;
-        let y = this.y + Math.cos(this.offset) * 4;
-        this.mesh.position.set(x, y, this.z);
+        let x = this.pos.x + Math.sin(this.offset) * 4;
+        let y = this.pos.y + Math.cos(this.offset) * 4;
+        this.mesh.position.set(x, y, this.pos.z);
         this.mesh.material[0].opacity = (Math.sin(this.offset * 3) * 0.7 + 0.3) * clearrunner;
         this.mesh.rotation.z += timediff / 5000;
         this.mesh.rotation.z %= Math.PI * 2;
@@ -250,19 +239,19 @@ class ParticleLava extends Particle {
     }
 }
 class ParticleStone extends Particle {
-    constructor(_material, posx, posy) {
-        let geometry = new THREE.PlaneGeometry(20, 20);
+    constructor(_material, _geometry, pos) {
+        let geometry = _geometry;
         let material = _material.clone();
         let offset = Math.random() * Math.PI * 2;
         let opacityOffset = Math.random();
         let mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = Math.random() * Math.PI * 2;
         mesh.scale.set(0, 0, 0);
+        mesh.position.set(pos.x, pos.y, -0.1);
         scene.add(mesh);
-        super(mesh, posx, posy, -0.1, offset, opacityOffset);
+        super(mesh, new THREE.Vector3(pos.x, pos.y, -0.1), offset, opacityOffset);
     }
     animate(timediff, clearrunner, totaltime) {
-        this.mesh.position.set(this.x, this.y, this.z);
         this.mesh.scale.set(this.birth * clearrunner, this.birth * clearrunner, 1);
         this.mesh.material[0].opacity = clearrunner;
         if (this.birth < 1)
@@ -463,26 +452,27 @@ class LineRed extends LineType {
         super();
         let glowball = THREE.ImageUtils.loadTexture("img/redline.png");
         this.redlinematerial = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
+        this.geometry = new THREE.PlaneGeometry(10, 10);
         this.every = 0;
     }
-    newDrag(particles, posx, posy, direction) {
+    newDrag(particles, pos, direction) {
         this.every++;
         if ((this.every %= 1) == 0)
-            particles.push(new ParticleRedLine(this.redlinematerial, posx, posy, direction));
+            particles.push(new ParticleRedLine(this.redlinematerial, this.geometry, pos, direction));
     }
 }
 class ParticleRedLine extends Particle {
-    constructor(_material, posx, posy, direction) {
-        let geometry = new THREE.PlaneGeometry(10, 10);
+    constructor(_material, _geometry, pos, direction) {
+        let geometry = _geometry;
         let material = _material;
         let offset = 0;
         let opacityOffset = 0;
         let mesh = new THREE.Mesh(geometry, [material]);
         mesh.rotation.z = direction - Math.PI / 2;
-        mesh.position.x = posx;
-        mesh.position.y = posy;
+        mesh.position.x = pos.x;
+        mesh.position.y = pos.y;
         scene.add(mesh);
-        super(mesh, posx, posy, 0, offset, opacityOffset);
+        super(mesh, new THREE.Vector3(pos.x, pos.y, 0), offset, opacityOffset);
     }
 }
 // function lineRubin () {
