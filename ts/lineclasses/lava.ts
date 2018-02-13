@@ -56,6 +56,7 @@ class ParticleLava extends Particle {
     this.mesh.rotation.z %= Math.PI * 2;
     this.mesh.scale.set(2-clearrunner*this.birth,2-clearrunner*this.birth,1);
 
+
     if (this.birth < 1) this.birth += timediff / 1000;
   }
 }

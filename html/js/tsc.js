@@ -156,6 +156,7 @@ class Particle {
         this.birth = 0;
     }
     animate(timediff, clearrunner, totaltime) {
+        this.mesh.material[0].opacity = clearrunner;
     }
 }
 class LineType {
@@ -210,6 +211,7 @@ class ParticleArrow extends Particle {
         let x = this.pos.x + inv * this.off.x;
         let y = this.pos.y + inv * this.off.y;
         this.mesh.position.set(x, y, this.pos.z);
+        this.mesh.material[0].opacity = clearrunner;
     }
 }
 class LineLava extends LineType {
