@@ -11,14 +11,15 @@ var clearrunner = 1;
 var clear = false;
 var totaltime = 0;
 var time = 0; //Time of last frame
-var activeLine = 1;
+var activeLine = 0;
+var activeColor = 'red';
 var mousedown = false; //Draw things if mouse is down
 //var lastx:number, lasty: number; //
 var lastPos;
 var drawing = false; // Is true during drawing loop
 var video;
 $(function () {
-    lineTypes.push(new LineLava());
+    //lineTypes.push(new LineLava());
     lineTypes.push(new LineRed());
     lineTypes.push(new LineArrow());
     video = document.querySelector('video');
@@ -75,16 +76,14 @@ $(document).keypress(function (event) {
     // if (event.charCode == 77) activeLine = martin;
 });
 $(document).bind('touchstart mousedown', function (e) {
-    //console.log('Click');
-    if ($(e.target).hasClass('btn')) {
+    if ($(e.target).hasClass('btn') || $(e.target).hasClass('fa')) {
         return;
     }
-    let pagePos;
     if (e.type == "touchstart") {
         //pagePos = new THREE.Vector2(e.touches[0].clientX, SH-e.touches[0].clientY);
     }
     else if (e.type == "mousedown") {
-        pagePos = new THREE.Vector2(e.pageX, SH - e.pageY);
+        let pagePos = new THREE.Vector2(e.pageX, SH - e.pageY);
         lineTypes[activeLine].newStart(particles, pagePos);
     }
     mousedown = true;
@@ -132,6 +131,13 @@ function clearDraw() {
 }
 function setActiveLine(no) {
     activeLine = no;
+    $('.brush').removeClass('active');
+    $('#l' + (no + 1)).addClass('active');
+}
+function setActiveColor(color) {
+    activeColor = color;
+    $('.color').removeClass('active');
+    $('#' + color).addClass('active');
 }
 function sendKey(uuid) {
     $.get('http://192.168.10.56:8088/?shortcut=' + uuid);
@@ -158,16 +164,20 @@ class LineType {
 class LineArrow extends LineType {
     constructor() {
         super();
-        let stone = THREE.ImageUtils.loadTexture("img/arrow.png");
-        this.arrowmaterial = new THREE.MeshBasicMaterial({ map: stone, transparent: true, blending: THREE.NormalBlending });
+        this.materials = [];
+        let glowball = THREE.ImageUtils.loadTexture("img/arrow.png");
+        this.materials['white'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
+        this.materials['red'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('red') });
+        this.materials['green'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('green') });
+        this.materials['blue'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('blue') });
         this.geometry = new THREE.PlaneGeometry(70, 70);
         this.every = 0;
     }
     newStart(particles, pos) {
-        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 0, new THREE.Vector2(0, -800)));
-        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 1.5, new THREE.Vector2(-800, 0)));
-        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 1, new THREE.Vector2(0, 800)));
-        particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 0.5, new THREE.Vector2(800, 0)));
+        particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 0, new THREE.Vector2(0, -800)));
+        particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 1.5, new THREE.Vector2(-800, 0)));
+        particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 1, new THREE.Vector2(0, 800)));
+        particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 0.5, new THREE.Vector2(800, 0)));
     }
 }
 class ParticleArrow extends Particle {
@@ -187,11 +197,14 @@ class ParticleArrow extends Particle {
     animate(timediff, clearrunner, totaltime) {
         if (this.birth < 1) {
             this.birth += timediff / 700;
-            let inv = 1 - this.birth * 0.90;
-            let x = this.pos.x + inv * this.off.x;
-            let y = this.pos.y + inv * this.off.y;
-            this.mesh.position.set(x, y, this.pos.z);
         }
+        else {
+            this.birth = 1;
+        }
+        let inv = 1 - this.birth * 0.95;
+        let x = this.pos.x + inv * this.off.x;
+        let y = this.pos.y + inv * this.off.y;
+        this.mesh.position.set(x, y, this.pos.z);
     }
 }
 class LineLava extends LineType {
@@ -398,67 +411,22 @@ class ParticleStone extends Particle {
 //   }
 //
 // }
-// function lineRedline () {
-//   this.every = 0;
-//   this.glowball = THREE.ImageUtils.loadTexture( "img/redline.png" );
-//   this.redlinematerial = new THREE.MeshBasicMaterial({map: this.glowball, transparent: true, blending: THREE.NormalBlending});
-//
-//
-//
-//   this.newPoint = function (scene, particles, posx, posy, direction) {
-//     this.every ++;
-//     this.every %= 8;
-//     //if (this.every % 2 == 0)
-//     this.newRedline(scene, particles, posx, posy, direction);
-//
-//   }
-//
-//   this.newRedline = function (scene, particles, posx, posy, direction) {
-//     var part = new Particle();
-//     var geometry = new THREE.PlaneGeometry( 15, 15 );
-//
-//     part.material = this.redlinematerial.clone();
-//     part.x = posx;
-//     part.y = posy;
-//     part.offset = 0;
-//     part.birth = 0;
-//
-//     part.object = new THREE.Mesh( geometry, part.material );
-//     part.object.rotation.z = direction - Math.PI / 2;
-//
-//     part.animate = this.animateRedline;
-//
-//     particles[particles.length] = part;
-//
-//     scene.add( part.object);
-//
-//   }
-//
-//
-//   this.animateRedline = function (part, timediff, clearrunner) {
-//     part.offset += timediff/30000;
-//     part.offset %= Math.PI * 2;
-//     part.object.position.x = part.x;
-//     part.object.position.y = part.y;
-//     part.object.material.opacity =  clearrunner;
-//     part.object.scale.set(clearrunner*part.birth + Math.sin(part.offset*50)/4,1,1);
-//
-//     if (part.birth < 1) part.birth += timediff / 1000;
-//   }
-//
-// }
 class LineRed extends LineType {
     constructor() {
         super();
+        this.materials = [];
         let glowball = THREE.ImageUtils.loadTexture("img/redline.png");
-        this.redlinematerial = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
+        this.materials['white'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
+        this.materials['red'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('red') });
+        this.materials['green'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('green') });
+        this.materials['blue'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('blue') });
         this.geometry = new THREE.PlaneGeometry(10, 10);
         this.every = 0;
     }
     newDrag(particles, pos, direction) {
         this.every++;
         if ((this.every %= 1) == 0)
-            particles.push(new ParticleRedLine(this.redlinematerial, this.geometry, pos, direction));
+            particles.push(new ParticleRedLine(this.materials[activeColor], this.geometry, pos, direction));
     }
 }
 class ParticleRedLine extends Particle {

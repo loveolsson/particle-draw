@@ -16,7 +16,8 @@ var clear:boolean = false;
 var totaltime:number = 0;
 
 var time:number = 0; //Time of last frame
-var activeLine:number = 1;
+var activeLine:number = 0;
+var activeColor:string = 'red';
 
 var mousedown:boolean = false; //Draw things if mouse is down
 //var lastx:number, lasty: number; //
@@ -26,7 +27,7 @@ var drawing:boolean = false; // Is true during drawing loop
 var video: HTMLVideoElement;
 
 $( function() {
-  lineTypes.push(new LineLava());
+  //lineTypes.push(new LineLava());
   lineTypes.push(new LineRed());
   lineTypes.push(new LineArrow());
 
@@ -101,17 +102,14 @@ $(document).keypress(function(event) {
   // if (event.charCode == 77) activeLine = martin;
 });
 $(document).bind('touchstart mousedown', function(e) {
-  //console.log('Click');
-  if ($(e.target).hasClass('btn')) {
+  if ($(e.target).hasClass('btn') || $(e.target).hasClass('fa')) {
     return;
   }
-
-  let pagePos: THREE.Vector2;
 
   if (e.type == "touchstart") {
     //pagePos = new THREE.Vector2(e.touches[0].clientX, SH-e.touches[0].clientY);
   } else if (e.type == "mousedown") {
-    pagePos = new THREE.Vector2(e.pageX, SH-e.pageY);
+    let pagePos = new THREE.Vector2(e.pageX, SH-e.pageY);
     lineTypes[activeLine].newStart(particles, pagePos);
   }
 
@@ -177,6 +175,14 @@ function clearDraw() {
 
 function setActiveLine(no: number) {
   activeLine = no;
+  $('.brush').removeClass('active');
+  $('#l' + (no + 1)).addClass('active');
+}
+
+function setActiveColor(color: string) {
+  activeColor = color;
+  $('.color').removeClass('active');
+  $('#' + color).addClass('active');
 }
 
 

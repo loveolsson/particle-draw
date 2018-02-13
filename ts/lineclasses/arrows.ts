@@ -1,5 +1,5 @@
 class LineArrow extends LineType {
-  arrowmaterial: THREE.MeshBasicMaterial;
+  materials: THREE.MeshBasicMaterial[] = [];
   geometry: THREE.PlaneGeometry;
 
   every: number;
@@ -7,8 +7,12 @@ class LineArrow extends LineType {
   constructor() {
     super();
 
-    let stone = THREE.ImageUtils.loadTexture( "img/arrow.png" );
-    this.arrowmaterial = new THREE.MeshBasicMaterial({map: stone, transparent: true, blending: THREE.NormalBlending});
+    let glowball = THREE.ImageUtils.loadTexture( "img/arrow.png" );
+    this.materials['white'] = new THREE.MeshBasicMaterial({map: glowball, transparent: true, blending: THREE.NormalBlending});
+    this.materials['red'] = new THREE.MeshBasicMaterial({map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('red')});
+    this.materials['green'] = new THREE.MeshBasicMaterial({map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('green')});
+    this.materials['blue'] = new THREE.MeshBasicMaterial({map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('blue')});
+
     this.geometry = new THREE.PlaneGeometry( 70, 70 )
 
 
@@ -16,10 +20,10 @@ class LineArrow extends LineType {
   }
 
   newStart (particles: Particle[], pos:THREE.Vector2) {
-    particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 0,    new THREE.Vector2(0, -800)));
-    particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 1.5,  new THREE.Vector2(-800, 0)));
-    particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 1,    new THREE.Vector2(0, 800)));
-    particles.push(new ParticleArrow(this.arrowmaterial, this.geometry, pos, Math.PI * 0.5,  new THREE.Vector2(800, 0)));
+    particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 0,    new THREE.Vector2(0, -800)));
+    particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 1.5,  new THREE.Vector2(-800, 0)));
+    particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 1,    new THREE.Vector2(0, 800)));
+    particles.push(new ParticleArrow(this.materials[activeColor], this.geometry, pos, Math.PI * 0.5,  new THREE.Vector2(800, 0)));
   }
 }
 
@@ -46,13 +50,16 @@ class ParticleArrow extends Particle {
   animate (timediff: number, clearrunner: number, totaltime: number) {
     if (this.birth < 1) {
       this.birth += timediff / 700;
-
-      let inv = 1 - this.birth * 0.90;
-
-      let x = this.pos.x + inv * this.off.x;
-      let y = this.pos.y + inv * this.off.y;
-
-      this.mesh.position.set(x, y, this.pos.z);
+    } else {
+      this.birth = 1;
     }
+
+    let inv = 1 - this.birth * 0.95;
+
+    let x = this.pos.x + inv * this.off.x;
+    let y = this.pos.y + inv * this.off.y;
+
+    this.mesh.position.set(x, y, this.pos.z);
+
   }
 }
