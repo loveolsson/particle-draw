@@ -18,6 +18,7 @@ var totaltime:number = 0;
 var time:number = 0; //Time of last frame
 var activeLine:number = 0;
 var activeColor:string = 'red';
+var dashDistance:number = 1;
 
 var mousedown:boolean = false; //Draw things if mouse is down
 //var lastx:number, lasty: number; //
@@ -29,6 +30,7 @@ var video: HTMLVideoElement;
 $( function() {
   //lineTypes.push(new LineLava());
   lineTypes.push(new LineRed());
+  lineTypes.push(lineTypes[0]);
   lineTypes.push(new LineArrow());
 
   video = document.querySelector('video');
@@ -183,6 +185,11 @@ function setActiveColor(color: string) {
   activeColor = color;
   $('.color').removeClass('active');
   $('#' + color).addClass('active');
+}
+
+
+function setDash(distance: number) {
+  dashDistance = distance;
 }
 
 

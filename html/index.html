@@ -62,6 +62,11 @@
     top: 400px;
   }
 
+  #d2 {
+    font-weight: bold;
+    vertical-align: top;
+  }
+
   #red {
     background: red;
   }
@@ -84,8 +89,9 @@
 <button class="btn" id="stop" onclick="stopVT(); clearDraw();"><i class="fa fa-pause"></i></button>
 
 <div class="container" id="brushes">
-  <button class="btn brush active" id="l1" onclick="setActiveLine(0);"><i class="fa fa-paint-brush"></i></button>
-  <button class="btn brush" id="l2" onclick="setActiveLine(1);"><i class="fa fa-crosshairs"></i></button>
+  <button class="btn brush active" id="l1" onclick="setActiveLine(0); setDash(1);"><i class="fa fa-paint-brush"></i></button>
+  <button class="btn brush" id="l2" onclick="setActiveLine(1); setDash(60);"><i class="fa fa-minus"></i></button>
+  <button class="btn brush" id="l3" onclick="setActiveLine(2);"><i class="fa fa-crosshairs"></i></button>
 </div>
 
 <div class="container" id="colors">
@@ -94,5 +100,6 @@
   <button class="btn color" id="blue" onclick="setActiveColor('blue');"></button>
   <button class="btn color" id="white" onclick="setActiveColor('white');"></button>
 </div>
+
 </body>
 </html>

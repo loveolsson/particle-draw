@@ -13,6 +13,7 @@ var totaltime = 0;
 var time = 0; //Time of last frame
 var activeLine = 0;
 var activeColor = 'red';
+var dashDistance = 1;
 var mousedown = false; //Draw things if mouse is down
 //var lastx:number, lasty: number; //
 var lastPos;
@@ -21,6 +22,7 @@ var video;
 $(function () {
     //lineTypes.push(new LineLava());
     lineTypes.push(new LineRed());
+    lineTypes.push(lineTypes[0]);
     lineTypes.push(new LineArrow());
     video = document.querySelector('video');
     gumInit();
@@ -138,6 +140,9 @@ function setActiveColor(color) {
     activeColor = color;
     $('.color').removeClass('active');
     $('#' + color).addClass('active');
+}
+function setDash(distance) {
+    dashDistance = distance;
 }
 function sendKey(uuid) {
     $.get('http://192.168.10.56:8088/?shortcut=' + uuid);
@@ -425,7 +430,8 @@ class LineRed extends LineType {
     }
     newDrag(particles, pos, direction) {
         this.every++;
-        if ((this.every %= 1) == 0)
+        this.every = this.every % dashDistance;
+        if ((this.every / dashDistance) < 0.5)
             particles.push(new ParticleRedLine(this.materials[activeColor], this.geometry, pos, direction));
     }
 }

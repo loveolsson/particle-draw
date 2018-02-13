@@ -19,7 +19,8 @@ class LineRed extends LineType {
 
   newDrag (particles: Particle[], pos: THREE.Vector2, direction: number) {
     this.every ++;
-    if ((this.every %= 1) == 0)
+    this.every = this.every % dashDistance;
+    if ((this.every / dashDistance) < 0.5)
       particles.push(new ParticleRedLine(this.materials[activeColor], this.geometry, pos, direction));
   }
 }
