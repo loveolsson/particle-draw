@@ -1,6 +1,4 @@
 {
-  "compileOnSave": true,
-
     "compilerOptions": {
       "target": "ES6",
       "outFile": "html/js/tsc.js"

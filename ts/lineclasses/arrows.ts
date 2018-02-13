@@ -60,6 +60,8 @@ class ParticleArrow extends Particle {
     let y = this.pos.y + inv * this.off.y;
 
     this.mesh.position.set(x, y, this.pos.z);
+    this.mesh.material[0].opacity = clearrunner;
+
 
   }
 }

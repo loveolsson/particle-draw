@@ -6,6 +6,7 @@ class Particle {
     }
 
     animate (timediff: number, clearrunner: number, totaltime: number) {
+      this.mesh.material[0].opacity = clearrunner;
     }
 }
 
