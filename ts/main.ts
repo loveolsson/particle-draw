@@ -109,12 +109,11 @@ $(document).bind('touchstart mousedown', function(e) {
   let pagePos: THREE.Vector2;
 
   if (e.type == "touchstart") {
-    pagePos = new THREE.Vector2(e.touches[0].clientX, SH-e.touches[0].clientY);
+    //pagePos = new THREE.Vector2(e.touches[0].clientX, SH-e.touches[0].clientY);
   } else if (e.type == "mousedown") {
     pagePos = new THREE.Vector2(e.pageX, SH-e.pageY);
+    lineTypes[activeLine].newStart(particles, pagePos);
   }
-
-  lineTypes[activeLine].newStart(particles, pagePos);
 
   mousedown = true;
   stopVT();
