@@ -50,6 +50,7 @@
 
 class LineRed extends LineType {
   redlinematerial: THREE.MeshBasicMaterial;
+  geometry: THREE.PlaneGeometry;
   every: number;
 
   constructor() {
@@ -58,30 +59,31 @@ class LineRed extends LineType {
 
     let glowball = THREE.ImageUtils.loadTexture( "img/redline.png" );
     this.redlinematerial = new THREE.MeshBasicMaterial({map: glowball, transparent: true, blending: THREE.NormalBlending});
+    this.geometry = new THREE.PlaneGeometry( 10, 10 )
 
     this.every = 0;
   }
 
-  newDrag (particles: Particle[], posx: number, posy: number, direction: number) {
+  newDrag (particles: Particle[], pos: THREE.Vector2, direction: number) {
     this.every ++;
     if ((this.every %= 1) == 0)
-      particles.push(new ParticleRedLine(this.redlinematerial, posx, posy, direction));
+      particles.push(new ParticleRedLine(this.redlinematerial, this.geometry, pos, direction));
   }
 }
 
 class ParticleRedLine extends Particle {
-  constructor (_material: THREE.MeshBasicMaterial, posx: number, posy: number, direction: number) {
-    let geometry = new THREE.PlaneGeometry( 10, 10 );
+  constructor (_material: THREE.MeshBasicMaterial, _geometry: THREE.PlaneGeometry, pos: THREE.Vector2, direction: number) {
+    let geometry = _geometry;
     let material = _material;
     let offset = 0;
     let opacityOffset = 0;
 
     let mesh = new THREE.Mesh( geometry, [material] );
     mesh.rotation.z = direction - Math.PI / 2;
-    mesh.position.x = posx;
-    mesh.position.y = posy;
+    mesh.position.x = pos.x;
+    mesh.position.y = pos.y;
     scene.add(mesh);
 
-    super(mesh, posx,  posy, 0, offset, opacityOffset);
+    super(mesh, new THREE.Vector3(pos.x,  pos.y, 0), offset, opacityOffset);
   }
 }
