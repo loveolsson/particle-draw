@@ -174,7 +174,7 @@ class LineArrow extends LineType {
         let glowball = THREE.ImageUtils.loadTexture("img/arrow.png");
         this.materials['white'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
         this.materials['red'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('red') });
-        this.materials['green'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('green') });
+        this.materials['green'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('#0f0') });
         this.materials['blue'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('blue') });
         this.geometry = new THREE.PlaneGeometry(70, 70);
         this.every = 0;
@@ -425,9 +425,9 @@ class LineRed extends LineType {
         let glowball = THREE.ImageUtils.loadTexture("img/redline.png");
         this.materials['white'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
         this.materials['red'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('red') });
-        this.materials['green'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('green') });
+        this.materials['green'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('#0f0') });
         this.materials['blue'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('blue') });
-        this.geometry = new THREE.PlaneGeometry(10, 10);
+        this.geometry = new THREE.PlaneGeometry(7, 7);
         this.every = 0;
     }
     newDrag(particles, pos, direction) {
