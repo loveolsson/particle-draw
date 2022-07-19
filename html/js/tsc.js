@@ -57,14 +57,14 @@ function render() {
 }
 function gumSuccess(stream) {
     console.log("gumSuccess");
-    video.src = window.URL.createObjectURL(stream);
+    video.srcObject = stream;
     video.play();
 }
 function gumError(error) {
     console.error('Error on getUserMedia', error);
 }
 function gumInit() {
-    navigator.getUserMedia({ video: { width: VW, height: VH } }, gumSuccess, gumError);
+    navigator.mediaDevices.getUserMedia({ video: { width: VW, height: VH } }).then(gumSuccess).catch(gumError);
 }
 $(document).keypress(function (event) {
     //console.log(event);
@@ -148,6 +148,11 @@ function sendKey(uuid) {
     $.get('http://192.168.10.56:8088/?shortcut=' + uuid);
 }
 class Particle {
+    mesh;
+    pos;
+    offset;
+    opacityOffset;
+    birth;
     constructor(mesh, pos, offset, opacityOffset) {
         this.mesh = mesh;
         this.pos = pos;
@@ -168,9 +173,11 @@ class LineType {
     }
 }
 class LineArrow extends LineType {
+    materials = [];
+    geometry;
+    every;
     constructor() {
         super();
-        this.materials = [];
         let glowball = THREE.ImageUtils.loadTexture("img/arrow.png");
         this.materials['white'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
         this.materials['red'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('red') });
@@ -187,6 +194,7 @@ class LineArrow extends LineType {
     }
 }
 class ParticleArrow extends Particle {
+    off;
     constructor(_material, _geometry, pos, rotation, off) {
         var geometry = _geometry;
         let material = _material;
@@ -215,6 +223,11 @@ class ParticleArrow extends Particle {
     }
 }
 class LineLava extends LineType {
+    lavamaterial;
+    stonematerial;
+    lavageometry;
+    stonegeometry;
+    every;
     constructor() {
         super();
         let glowball = THREE.ImageUtils.loadTexture("img/glowball2.png");
@@ -419,9 +432,11 @@ class ParticleStone extends Particle {
 //
 // }
 class LineRed extends LineType {
+    materials = [];
+    geometry;
+    every;
     constructor() {
         super();
-        this.materials = [];
         let glowball = THREE.ImageUtils.loadTexture("img/redline.png");
         this.materials['white'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending });
         this.materials['red'] = new THREE.MeshBasicMaterial({ map: glowball, transparent: true, blending: THREE.NormalBlending, color: new THREE.Color('red') });

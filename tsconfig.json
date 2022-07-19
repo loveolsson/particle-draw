@@ -1,9 +1,13 @@
 {
     "compilerOptions": {
-      "target": "ES6",
+      "target": "ESNext",
       "outFile": "html/js/tsc.js"
     },
     "include": [
         "ts/**/*"
+    ],
+    "lib": [
+      "ESNext",
+      "dom"
     ]
 }

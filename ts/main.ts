@@ -79,16 +79,16 @@ function render() {
 
 function gumSuccess(stream: MediaStream) {
   console.log("gumSuccess");
-  video.src = window.URL.createObjectURL(stream);
+  video.srcObject = stream;
   video.play();
 }
 
-function gumError(error: MediaStreamError) {
+function gumError(error: any) {
   console.error('Error on getUserMedia', error);
 }
 
 function gumInit() {
-  navigator.getUserMedia({video: { width: VW, height: VH } }, gumSuccess, gumError);
+  navigator.mediaDevices.getUserMedia({video: { width: VW, height: VH } }).then(gumSuccess).catch(gumError);
 }
 
 
