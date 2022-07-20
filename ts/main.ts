@@ -164,11 +164,13 @@ $(document).bind('mousemove touchmove', function(e) {
 
 
 function playVT() {
-  sendKey('c3869276-a102-4248-9d9c-81999ca4d0eb');
+  //sendKey('c3869276-a102-4248-9d9c-81999ca4d0eb');
+  sendCompanion(1, 1);
 }
 
 function stopVT() {
-  sendKey('1023b31d-8d72-4613-bc3e-d87aae09e1a5');
+  //sendKey('1023b31d-8d72-4613-bc3e-d87aae09e1a5');
+  sendCompanion(1, 2);
 }
 
 function clearDraw() {
@@ -195,4 +197,8 @@ function setDash(distance: number) {
 
 function sendKey(uuid: string) {
   $.get('http://192.168.10.56:8088/?shortcut=' + uuid);
+}
+
+function sendCompanion(bank: number, key: number) {
+  $.get(`http://localhost:8888/press/bank/${bank}/${key}`);
 }
